@@ -1,3 +1,8 @@
+if(CODE_TEMPLATE_FOUND)
+  return()
+endif()
+set(CODE_TEMPLATE_FOUND TRUE)
+
 # Specify codetemplate repository URL if not provided
 if(NOT CODE_TEMPLATE_URL)
   set(CODE_TEMPLATE_URL "https://github.com/GatorQue/codetemplate.git")
@@ -28,9 +33,6 @@ if(NOT EXISTS ${DOWNLOAD_CACHE_DIR})
   file(MAKE_DIRECTORY ${DOWNLOAD_CACHE_DIR})
 endif()
 
-# Add codetemplate cmake modules path in front of all others and return
-set(CMAKE_MODULES_PATH ${CODE_TEMPLATE_DIR}/cmake/modules ${CMAKE_MODULES_PATH})
-
 # Find git executable (exit with error if missing)
 find_program(GIT_PATH git)
 
@@ -38,7 +40,7 @@ if(NOT EXISTS ${GIT_PATH})
   message(FATAL_ERROR "CodeTemplate requires git executable")
 endif()
 
-macro(ct_show_version)
+macro(_get_ct_version)
   # Tell the user which codetemplate version is being used
   execute_process(
     COMMAND ${GIT_PATH} describe --tags
@@ -47,45 +49,20 @@ macro(ct_show_version)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
-    message(WARNING "Using CodeTemplate Version (unknown)")
-  else()
-    message(STATUS "Using CodeTemplate Version (${CODE_TEMPLATE_VERSION})")
+    set(CODE_TEMPLATE_VERSION "unknown")
   endif()
 endmacro()
 
-# Check to see if codetemplate repository is already available
-if(EXISTS ${CODE_TEMPLATE_DIR})
-  ct_show_version()
-  return()
-endif()
+# This macro will show and store the codetemplate version in use
+macro(ct_show_version)
+  _get_ct_version()
+  message(STATUS "Using CodeTemplate Version (${CODE_TEMPLATE_VERSION})")
+endmacro()
 
-# Check to see if download cache of codetemplate is available
-if(EXISTS ${DOWNLOAD_CACHE_DIR}/codetemplate.tgz)
-  execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xfz ${DOWNLOAD_CACHE_DIR}/codetemplate.tgz ${CODE_TEMPLATE_DIR}
-    WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
-    RESULT_VARIABLE result)
-  if(NOT result EQUAL 0)
-    message(WARNING "Unable to extract codetemplate.tgz to ${CODE_TEMPLATE_DIR}")
-  else()
-    # Otherwise show codetemplate version and return after extracting
-    ct_show_version()
-    return()
-  endif()
-endif()
-
-# Use Git to download codetemplate repository
-file(REMOVE_RECURSE ${CODE_TEMPLATE_DIR})
-execute_process(
-  COMMAND ${GIT_PATH} clone ${CODE_TEMPLATE_URL} ${CODE_TEMPLATE_DIR}
-  WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
-  RESULT_VARIABLE result)
-if(NOT result EQUAL 0)
-  message(FATAL_ERROR "Unable to clone CodeTemplate repository to ${CODE_TEMPLATE_DIR}")
-else()
+# This macro creates a cache of the current codetemplate in use.
+macro(_create_ct_cache)
   file(RELATIVE_PATH _ct_relative ${CODE_TEMPLATE_PARENT_DIR}
     ${CODE_TEMPLATE_DIR})
-  # Create download cache of codetemplate repository for next time
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E tar cfz ${DOWNLOAD_CACHE_DIR}/codetemplate.tgz ${_ct_relative}
     WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
@@ -93,6 +70,42 @@ else()
   if(NOT result EQUAL 0)
     message(FATAL_ERROR "Unable to create codetemplate.tgz archive in ${DOWNLOAD_CACHE_DIR}")
   endif()
+endmacro()
+
+macro(_get_ct_from_git)
+  # Use Git to download codetemplate repository
+  file(REMOVE_RECURSE ${CODE_TEMPLATE_DIR})
+  execute_process(
+    COMMAND ${GIT_PATH} clone ${CODE_TEMPLATE_URL} ${CODE_TEMPLATE_DIR}
+    WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
+    RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Unable to clone CodeTemplate repository to ${CODE_TEMPLATE_DIR}")
+  else()
+    _create_ct_cache()
+  endif()
+endmacro()
+
+# Check to see if codetemplate repository is already available
+if(NOT EXISTS ${CODE_TEMPLATE_DIR})
+  # Download cache of codetemplate doesn't exist? clone it now
+  if(NOT EXISTS ${DOWNLOAD_CACHE_DIR}/codetemplate.tgz)
+    _get_ct_from_git()
+  # Use download cache of codetemplate instead
+  else()
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E tar xfz ${DOWNLOAD_CACHE_DIR}/codetemplate.tgz ${CODE_TEMPLATE_DIR}
+      WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
+      RESULT_VARIABLE result)
+    if(NOT result EQUAL 0)
+      message(WARNING "Unable to extract codetemplate.tgz to ${CODE_TEMPLATE_DIR}")
+      _get_ct_from_git()
+    endif()
+  endif()
 endif()
 
 ct_show_version()
+
+# Add codetemplate cmake module path and include ctIncludes
+set(CMAKE_MODULE_PATH ${CODE_TEMPLATE_DIR}/Modules ${CMAKE_MODULE_PATH})
+include(ctIncludes)
