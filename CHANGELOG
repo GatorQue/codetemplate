@@ -1,3 +1,9 @@
+Version: 0.2.0
+Date: 2016-05-28
+Features added/removed:
+Bugs Fixed:
+- Fix variable issue preventing codetemplate version reporting
+
 Version: 0.1.0
 Date: 2016-05-26
 Features added/removed:

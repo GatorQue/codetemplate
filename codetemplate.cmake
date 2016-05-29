@@ -43,7 +43,7 @@ macro(ct_show_version)
   execute_process(
     COMMAND ${GIT_PATH} describe --tags
     WORKING_DIRECTORY ${CODE_TEMPLATE_DIR}
-    OUTPUT_VARIABLE ${CODE_TEMPLATE_VERSION}
+    OUTPUT_VARIABLE CODE_TEMPLATE_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(NOT result EQUAL 0)
     message(WARNING "Using CodeTemplate Version (unknown)")
