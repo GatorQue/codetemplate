@@ -46,12 +46,10 @@ macro(ct_add_option _name _type _description _default)
     set(${_name} ${_default} CACHE ${_type} "${_description}" FORCE)
     list(APPEND __ct_option_output "\nset(${_name} ${_default})")
   endif()
+  list(APPEND __ct_option_output "\nset(${name}_PREVIOUS ${${name}})")
   # Import previous value from environment during CMake rebuild if available
   if(DEFINED ENV{${name}_PREVIOUS})
-    list(APPEND __ct_option_output "\nset(${name}_PREVIOUS $ENV{${name}_PREVIOUS})")
     set(${name}_PREVIOUS $ENV{${name}_PREVIOUS})
-  else()
-    list(APPEND __ct_option_output "\nset(${name}_PREVIOUS ${${name}})")
   endif()
 
   # Generate the __ct_option_file output now (current or verify)
@@ -87,7 +85,7 @@ macro(ct_add_option _name _type _description _default)
 
     # If compare above failed, then call CMAKE to regenerate Makefiles
     if(NOT COMPARE_RESULT EQUAL 0)
-      message(STATUS "Variable '${_name}' has changed")
+      message(STATUS "Variable '${_name}' has changed from '${${name}_PREVIOUS}' to '${${name}}', rebuilding Makefiles")
       # Set master variable changed flag to ON
       set(ENV{CMAKE_VARIABLES_CHANGED} ON)
       # Keep track of previous value of variable
