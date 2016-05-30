@@ -1,11 +1,21 @@
+###############################################################################
+# NOTE: Bump the version below if this file changes
+###############################################################################
+set(_ct_cmake_version 1.0.0)
 if(CODE_TEMPLATE_FOUND)
   return()
 endif()
 set(CODE_TEMPLATE_FOUND TRUE)
+set(_current_ct_cmake_version ${_ct_cmake_version})
 
 # Specify codetemplate repository URL if not provided
 if(NOT CODE_TEMPLATE_URL)
   set(CODE_TEMPLATE_URL "https://github.com/GatorQue/codetemplate.git")
+endif()
+
+# Specify codetemplate branch to use if not provided
+if(NOT CODE_TEMPLATE_BRANCH)
+  set(CODE_TEMPLATE_BRANCH "master")
 endif()
 
 # Specify codetemplate repository path if not provided as sibling to
@@ -76,7 +86,7 @@ macro(_get_ct_from_git)
   # Use Git to download codetemplate repository
   file(REMOVE_RECURSE ${CODE_TEMPLATE_DIR})
   execute_process(
-    COMMAND ${GIT_PATH} clone ${CODE_TEMPLATE_URL} ${CODE_TEMPLATE_DIR}
+    COMMAND ${GIT_PATH} clone -b ${CODE_TEMPLATE_BRANCH} -- ${CODE_TEMPLATE_URL} ${CODE_TEMPLATE_DIR}
     WORKING_DIRECTORY ${CODE_TEMPLATE_PARENT_DIR}
     RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
@@ -105,6 +115,12 @@ if(NOT EXISTS ${CODE_TEMPLATE_DIR})
 endif()
 
 ct_show_version()
+
+# Include codetemplate.cmake file in codetemplate and verify versions
+include(${CODE_TEMPLATE_DIR}/codetemplate.cmake)
+if(_ct_cmake_version VERSION_GREATER _current_ct_cmake_version)
+  message(WARNING "Your codetemplate.cmake file is old (${_current_ct_cmake_version}), please this update project to use newer codetemplate.cmake file (${_ct_cmake_version}).")
+endif()
 
 # Add codetemplate cmake module path and include ctIncludes
 set(CMAKE_MODULE_PATH ${CODE_TEMPLATE_DIR}/Modules ${CMAKE_MODULE_PATH})
