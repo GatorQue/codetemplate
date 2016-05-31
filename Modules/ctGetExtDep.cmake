@@ -10,7 +10,6 @@ endif()
 # Define the __DOWNLOAD, __INSTALL, and __SOURCE variables for use below
 set(__DOWNLOAD ${DOWNLOAD_CACHE_DIR})
 set(__SOURCE ${CMAKE_BINARY_DIR}/third_party/src)
-set(__PROJECT_SOURCE ${CMAKE_SOURCE_DIR}/third_party/src)
 
 # ct_get_file will download the file specified to the directory provided.
 # Usage:
@@ -653,12 +652,12 @@ macro(ct_get_cmake _dir_name)
     set(_ct_DOWNLOAD_DIR ${__DOWNLOAD})
   endif()
 
-  # SOURCE_DIR not provided? then set it as __PROJECT_SOURCE/_dir_name
+  # SOURCE_DIR not provided? then set it as __SOURCE/_dir_name
   if(NOT DEFINED _ct_SOURCE_DIR)
-    if(NOT EXISTS ${__PROJECT_SOURCE})
-      file(MAKE_DIRECTORY ${__PROJECT_SOURCE})
+    if(NOT EXISTS ${__SOURCE})
+      file(MAKE_DIRECTORY ${__SOURCE})
     endif()
-    set(_ct_SOURCE_DIR ${__PROJECT_SOURCE}/${_dir_name})
+    set(_ct_SOURCE_DIR ${__SOURCE}/${_dir_name})
   endif()
 
   # Download URL options provided?

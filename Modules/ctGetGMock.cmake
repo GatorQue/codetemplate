@@ -11,9 +11,9 @@ ct_get_cmake(googlemock
 set(ALL_LIBS ${ALL_LIBS} gtest gmock)
 
 # Set gtest/gmock include directory and auto library dependencies
-set(gtest_AUTO_INCLUDE_DIR ${__PROJECT_SOURCE}/googlemock/gtest/include)
-set(gtest_AUTO_DEPS gmock gmock_main)
-set(gmock_AUTO_INCLUDE_DIR ${__PROJECT_SOURCE}/googlemock/include)
-set(gmock_AUTO_DEPS gmock gmock_main)
+set(gtest_AUTO_INCLUDE_DIR ${__SOURCE}/googlemock/gtest/include)
+set(gtest_AUTO_DEPS gtest_main)
+set(gmock_AUTO_INCLUDE_DIR ${__SOURCE}/googlemock/include)
+set(gmock_AUTO_DEPS gmock_main gtest)
 
 # EOF
