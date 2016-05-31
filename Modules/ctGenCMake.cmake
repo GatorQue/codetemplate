@@ -193,11 +193,12 @@ macro(ct_get_lib_deps _lib_deps _source)
     string(REGEX MATCHALL "#[ \t]*include[ \t]+[\"<][a-zA-Z0-9/.-]+[\">]" _includes ${_content})
     foreach(_include ${_includes})
       string(REGEX REPLACE "#[ \t]*include[ \t]+.([a-zA-Z0-9/.-]+)." "\\1" _include_file ${_include})
+      #message(STATUS "${_source} looking for ${_include_file}")
       # Check each target in all libs for include file
       foreach(_target ${ALL_LIBS})
         #message(STATUS "Searching for ${_include_file} to add ${_target}")
         if(EXISTS ${${_target}_AUTO_INCLUDE_DIR}/${_include_file})
-          #message(STATUS "found")
+          #message(STATUS "found ${_target} for ${_include_file}")
           # Recursively check for dependencies in _include_file
           ct_get_lib_deps(${_lib_deps} ${${_target}_AUTO_INCLUDE_DIR}/${_include_file})
           # Add this libraries dependencies

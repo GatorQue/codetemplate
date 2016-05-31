@@ -1,7 +1,7 @@
 ###############################################################################
 # NOTE: Bump the version below if this file changes
 ###############################################################################
-set(_ct_cmake_version 1.0.0)
+set(_ct_cmake_version 1.1.0)
 if(CODE_TEMPLATE_FOUND)
   return()
 endif()
@@ -41,6 +41,18 @@ message(STATUS "DOWNLOAD_CACHE_DIR=${DOWNLOAD_CACHE_DIR}")
 # Create download cache directory if it doesn't exist yet
 if(NOT EXISTS ${DOWNLOAD_CACHE_DIR})
   file(MAKE_DIRECTORY ${DOWNLOAD_CACHE_DIR})
+endif()
+
+# Specify third party path if not provided as sibling to CMAKE_SOURCE_DIR
+if(NOT THIRD_PARTY_DIR)
+  set(THIRD_PARTY_DIR ${CMAKE_SOURCE_DIR}/../third_party)
+endif()
+get_filename_component(THIRD_PARTY_DIR ${THIRD_PARTY_DIR} ABSOLUTE)
+message(STATUS "THIRD_PARTY_DIR=${THIRD_PARTY_DIR}")
+
+# Create download cache directory if it doesn't exist yet
+if(NOT EXISTS ${THIRD_PARTY_DIR})
+  file(MAKE_DIRECTORY ${THIRD_PARTY_DIR})
 endif()
 
 # Find git executable (exit with error if missing)

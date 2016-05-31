@@ -8,14 +8,7 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 # Define the __DOWNLOAD, __INSTALL, and __SOURCE variables for use below
-set(__DOWNLOAD ${CMAKE_SOURCE_DIR}/third_party)
-if(CMAKE_BUILD_TYPE STREQUAL "")
-  set(__INSTALL
-      ${CMAKE_SOURCE_DIR}/third_party/${CMAKE_SYSTEM_PROCESSOR}/__default__)
-else()
-  set(__INSTALL
-      ${CMAKE_SOURCE_DIR}/third_party/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_BUILD_TYPE})
-endif()
+set(__DOWNLOAD ${DOWNLOAD_CACHE_DIR})
 set(__SOURCE ${CMAKE_BINARY_DIR}/third_party/src)
 set(__PROJECT_SOURCE ${CMAKE_SOURCE_DIR}/third_party/src)
 
@@ -154,6 +147,7 @@ function(ct_extract_file _file _dir)
   # Move "the one" directory to the final directory:
   file(REMOVE_RECURSE ${_dir_abs})
   get_filename_component(_files ${_files} ABSOLUTE)
+  file(MAKE_DIRECTORY ${_dir_abs})
   file(RENAME ${_files} ${_dir_abs})
 
   # Clean up:
@@ -439,12 +433,12 @@ macro(ct_get_ext_dep _target)
 
   # INSTALL_DIR not provided? then set it as __INSTALL/_target
   if(NOT DEFINED _ct_INSTALL_DIR)
-    set(_ct_INSTALL_DIR ${__INSTALL}/${_target})
+    set(_ct_INSTALL_DIR ${__INSTALL})
   endif()
 
   # Root hint variable provided? set to third_party install directory
   if(_ct_ROOT_HINT_VAR)
-    set(${_ct_ROOT_HINT_VAR} ${_ct_INSTALL_DIR})
+    set(${_ct_ROOT_HINT_VAR} ${THIRD_PARTY_FIND_DIR})
   endif()
 
   # Set _FIND_PACKAGE_ARGS value
@@ -628,7 +622,7 @@ endmacro()
 # ct_get_cmake will retrieve and include an external CMake project
 # (e.g. googlemock) for use by the project.
 # Usage:
-# ct_get_ext_dep(_dir_name)
+# ct_get_cmake(_dir_name)
 #   _dir_name - Directory name for the external CMake project being added
 #   -- Retrieve step options --
 #   URL [..] - Download URL to filename
@@ -705,6 +699,154 @@ macro(ct_get_cmake _dir_name)
 
   # Add CMake project directory we just retrieved
   add_subdirectory(${_ct_SOURCE_DIR})
+
+  # Cleanup variables set above
+  foreach(_var ${_options})
+    unset(${_var})
+  endforeach()
+  foreach(_var ${_oneValueArgs})
+    unset(${_var})
+  endforeach()
+  foreach(_var ${_multiValueArgs})
+    unset(${_var})
+  endforeach()
+endmacro()
+
+# ct_get_prebuilt will retrieve and install a prebuilt set of libraries
+# for use by the project.
+# Usage:
+# ct_get_prebuilt(_dir_name)
+#   _dir_name - Directory name for the external CMake project being added
+#   -- Test step options --
+#   PACKAGE [..] - Find package name to attempt to use first
+#   COMPONENTS [..] - Package components to attempt to find
+#   ROOT_HINT_VAR [..] - Package root hint variable to use for find package if available
+#   FOUND_VAR [..] - Package found variable to identify find package success
+#   INCLUDE_DIR_VAR [..] - Package include dir variable
+#   LIBS [.. ..] - One or more libraries provided by package
+#   -- Retrieve step options --
+#   URL [..] - Download URL to filename
+#   URL_MD5 [..] - Download MD5 sum to compare filename to
+#   DOWNLOAD_DIR [..] - Download directory to download filename to
+#   GIT_REPOSITORY [..] - URL to git repository to clone
+#   GIT_TAG [..] - Git reference/commit hash/tag to checkout
+#   HG_REPOSITORY [..] - URL to mercurial repository to clone
+#   HG_TAG [..] - Mercurial branch name/commit id/tag to checkout
+#   SVN_REPOSITORY [..] - URL to svn repository to checkout
+#   SVN_REVISION [..] - SVN revision to checkout
+#   -- Install step options --
+#   INSTALL_DIR [..] - Directory to install files to
+macro(ct_get_prebuilt _dir_name)
+  # Set options that have no arguments
+  set(_options)
+  # Set one value arguments
+  set(_oneValueArgs PACKAGE ROOT_HINT_VAR FOUND_VAR INCLUDE_DIR_VAR
+    URL URL_MD5 DOWNLOAD_DIR GIT_REPOSITORY GIT_TAG HG_REPOSITORY HG_TAG
+    SVN_REPOSITORY SVN_REVISION INSTALL_DIR)
+  # Set multi value arguments
+  set(_multiValueArgs COMPONENTS LIBS)
+
+  # Parse the arguments provided into categories
+  cmake_parse_arguments(_ct "${_options}" "${_oneValueArgs}" "${_multiValueArgs}" ${ARGN})
+
+  # Check for missing PACKAGE value
+  if(NOT DEFINED _ct_PACKAGE)
+    message(FATAL_ERROR "Bad PACKAGE value")
+  endif()
+
+  # Check for missing or invalid FOUND_VAR value
+  if(NOT DEFINED _ct_FOUND_VAR)
+    message(FATAL_ERROR "Bad FOUND_VAR value")
+  endif()
+
+  # DOWNLOAD_DIR not provided? then set it as __DOWNLOAD
+  if(NOT DEFINED _ct_DOWNLOAD_DIR)
+    set(_ct_DOWNLOAD_DIR ${__DOWNLOAD})
+  endif()
+
+  # INSTALL_DIR not provided? then set it as THIRD_PARTY_FIND_DIR
+  if(NOT DEFINED _ct_INSTALL_DIR)
+    set(_ct_INSTALL_DIR ${THIRD_PARTY_FIND_DIR})
+  endif()
+
+  # Root hint variable provided? set to third_party find directory
+  if(_ct_ROOT_HINT_VAR)
+    set(${_ct_ROOT_HINT_VAR} ${THIRD_PARTY_FIND_DIR})
+  endif()
+
+  # Set _FIND_PACKAGE_ARGS value
+  set(_FIND_PACKAGE_ARGS ${_ct_PACKAGE})
+  if(_ct_COMPONENTS)
+    set(_FIND_PACKAGE_ARGS ${_FIND_PACKAGE_ARGS} COMPONENTS ${_ct_COMPONENTS})
+  endif()
+
+  # Workaround Start
+  ###########################################################################
+  # Generate CMake script to call find_package to work around CMake bug
+  # #15293 which isn't fixed until CMake 3.2.
+
+  # Create and execute TestFind<Package>.cmake script
+  configure_file(${CODE_TEMPLATE_CMAKE_DIR}/TestFindPackage.cmake
+      ${PROJECT_BINARY_DIR}/TestFind${_ct_PACKAGE}.cmake
+      @ONLY)
+  execute_process(
+      COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/TestFind${_ct_PACKAGE}.cmake
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      RESULT_VARIABLE _result_code
+      OUTPUT_FILE TestFind${_ct_PACKAGE}.log
+      ERROR_FILE TestFind${_ct_PACKAGE}-error.log)
+  ###########################################################################
+  # Workaround End
+
+  # Package not found? then attempt to retrieve it now
+  if(NOT _result_code EQUAL 0)
+    # Download URL options provided?
+    if(_ct_URL)
+      get_filename_component(_filename ${_ct_URL} NAME)
+
+      # Download the file to DOWNLOAD_DIR
+      ct_get_file(${_ct_URL} ${_ct_DOWNLOAD_DIR} MD5 ${_ct_URL_MD5})
+
+      # Extract the file to SOURCE_DIR (which we create now)
+      ct_extract_file(${_ct_DOWNLOAD_DIR}/${_filename} ${_ct_INSTALL_DIR})
+    endif()
+
+    # Git options provided?
+    if(_ct_GIT_REPOSITORY)
+      # Clone/update the repository
+      ct_get_git(${_ct_GIT_REPOSITORY} ${_ct_INSTALL_DIR} REF ${_ct_GIT_TAG})
+    endif()
+
+    # Mercurial options provided?
+    if(_ct_HG_REPOSITORY)
+      # Clone/update the repository
+      ct_get_hg(${_ct_HG_REPOSITORY} ${_ct_INSTALL_DIR} REF ${_ct_HG_TAG})
+    endif()
+
+    # SVN options provided?
+    if(_ct_SVN_REPOSITORY)
+      # Clone/update the repository
+      ct_get_svn(${_ct_SVN_REPOSITORY} ${_ct_INSTALL_DIR} REF ${_ct_SVN_REVISION})
+    endif()
+  endif()
+
+  # Use package provided to find external dependency
+  find_package(${_FIND_PACKAGE_ARGS})
+
+  if(${_ct_FOUND_VAR})
+    # Add the include file directory
+    include_directories(${${_ct_INCLUDE_DIR_VAR}})
+  else()
+    message(FATAL_ERROR "Bad external dependency '${_dir_name}'")
+  endif()
+
+  # Add all libraries provided by this package to auto dependency list
+  set(ALL_LIBS ${ALL_LIBS} ${_ct_LIBS})
+
+  # Add auto include directory for each library added
+  foreach(_lib ${_ct_LIBS})
+    set(${_lib}_AUTO_INCLUDE_DIR ${${_ct_INCLUDE_DIR_VAR}})
+  endforeach()
 
   # Cleanup variables set above
   foreach(_var ${_options})
