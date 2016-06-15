@@ -10,6 +10,7 @@ endif()
 # Define the __DOWNLOAD, __INSTALL, and __SOURCE variables for use below
 set(__DOWNLOAD ${DOWNLOAD_CACHE_DIR})
 set(__SOURCE ${CMAKE_BINARY_DIR}/third_party/src)
+set(__BINARY ${CMAKE_BINARY_DIR}/third_party/bin)
 
 # ct_get_file will download the file specified to the directory provided.
 # Usage:
@@ -515,9 +516,9 @@ macro(ct_get_ext_dep _target)
       set(_ct_BIN_DIR ${__SOURCE}/${_target})
     endif()
 
-    # BIN_DIR not provided? then set it as __SOURCE/_target-build
+    # BIN_DIR not provided? then set it as __BINARY/_target
     if(NOT DEFINED _ct_BIN_DIR)
-      set(_ct_BIN_DIR ${__SOURCE}/${_target}-build)
+      set(_ct_BIN_DIR ${__BINARY}/${_target})
     endif()
 
     # Set BIN_DIR as ${_ct_BIN_DIR} defined above
@@ -634,13 +635,14 @@ endmacro()
 #   SVN_REPOSITORY [..] - URL to svn repository to checkout
 #   SVN_REVISION [..] - SVN revision to checkout
 #   SOURCE_DIR [..] - Source dir to extract download to or clone to
+#   BINARY_DIR [..] - Binary dir to build CMake project from
 #   INCLUDE_DIRS [..] - Include directories relative to SOURCE_DIR to add
 macro(ct_get_cmake _dir_name)
   # Set options that have no arguments
   set(_options)
   # Set one value arguments
   set(_oneValueArgs URL URL_MD5 DOWNLOAD_DIR GIT_REPOSITORY GIT_TAG HG_REPOSITORY HG_TAG
-      SVN_REPOSITORY SVN_REVISION SOURCE_DIR)
+      SVN_REPOSITORY SVN_REVISION SOURCE_DIR BINARY_DIR)
   # Set multi value arguments
   set(_multiValueArgs INCLUDE_DIRS)
 
@@ -658,6 +660,14 @@ macro(ct_get_cmake _dir_name)
       file(MAKE_DIRECTORY ${__SOURCE})
     endif()
     set(_ct_SOURCE_DIR ${__SOURCE}/${_dir_name})
+  endif()
+
+  # BINARY_DIR not provided? then set it as __BINARY/_dir_name
+  if(NOT DEFINED _ct_BINARY_DIR)
+    if(NOT EXISTS ${__BINARY})
+      file(MAKE_DIRECTORY ${__BINARY})
+    endif()
+    set(_ct_BINARY_DIR ${__BINARY}/${_dir_name})
   endif()
 
   # Download URL options provided?
@@ -697,7 +707,7 @@ macro(ct_get_cmake _dir_name)
   endif()
 
   # Add CMake project directory we just retrieved
-  add_subdirectory(${_ct_SOURCE_DIR})
+  add_subdirectory(${_ct_SOURCE_DIR} ${_ct_BINARY_DIR})
 
   # Cleanup variables set above
   foreach(_var ${_options})
