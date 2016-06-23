@@ -8,6 +8,7 @@ ct_get_prebuilt(sfml-prebuilt
   PACKAGE SFML
   COMPONENTS audio graphics network window system
   FOUND_VAR SFML_FOUND
+  ROOT_HINT_VAR SFML_ROOT
   INCLUDE_DIR_VAR SFML_INCLUDE_DIR
   #LIBS sfml-audio sfml-graphics sfml-network sfml-window sfml-system
   URL http://www.sfml-dev.org/files/SFML-2.3.2-linux-gcc-64-bit.tar.gz
