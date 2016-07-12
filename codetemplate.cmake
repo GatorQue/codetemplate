@@ -174,7 +174,7 @@ endif()
 set(CMAKE_MODULE_PATH ${CODE_TEMPLATE_DIR}/Modules ${CMAKE_MODULE_PATH})
 
 # Retrieve codetemplate extension repository/archive if specified
-if(EXENSION_URL)
+if(EXTENSION_URL)
   # Does extension directory not yet exist? create it now
   if(NOT EXISTS ${EXTENSION_DIR})
     set(EXTENSION_ARCHIVE extension-${EXTENSION_BRANCH}.tgz)
