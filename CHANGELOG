@@ -1,3 +1,14 @@
+Version: 0.6.0
+Date: 2016-07-14
+Features added/removed:
++ Add optional EXTENSION_URL to codetemplate.cmake (project specific modules)
++ Add C++11 support checking and enabling
++ Add ct_find_package macro for testing if packages exist
+Bugs Fixed:
+- Fix binary folder warning (usually observed under CLion) for googlemock/test
+- Fix autogen bugs
+- Fix find package issues
+
 Version: 0.5.0
 Date: 2016-05-30
 Features added/removed:
