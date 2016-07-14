@@ -77,6 +77,9 @@ function(ct_add_lib _target)
       # Add the object library target first
       add_library(${_target}-obj OBJECT ${_ct_HEADERS} ${_ct_SOURCES})
 
+      # Shared libraries need PIC enabled for the object file created above
+      set_property(TARGET ${_target}-obj PROPERTY POSITION_INDEPENDENT_CODE 1)
+
       # Add the shared library next
       add_library(${_target} SHARED $<TARGET_OBJECTS:${_target}-obj>)
 

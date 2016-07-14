@@ -39,7 +39,7 @@ find_program(LCOV_COMMAND lcov)
 find_program(GENHTML_COMMAND genhtml)
 
 # Check that either gcov or lcov and genhtml commands are available
-if(GCOV_COMMAND-NOTFOUND OR LCOV_COMMAND-NOTFOUND AND GENHTML_COMMAND-NOTFOUND)
+if(NOT GCOV_COMMAND OR NOT LCOV_COMMAND AND NOT GENHTML_COMMAND)
   message(WARNING "Test coverage reports disabled, missing gcov or lcov and genthml")
   set(UT_COVERAGE OFF)
 endif()
