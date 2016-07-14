@@ -12,6 +12,37 @@ set(__DOWNLOAD ${DOWNLOAD_CACHE_DIR})
 set(__SOURCE ${CMAKE_BINARY_DIR}/third_party/src)
 set(__BINARY ${CMAKE_BINARY_DIR}/third_party/bin)
 
+# ct_find_package will determine if the package specified can be found
+macro(ct_find_package _package)
+  # Workaround Start
+  ###########################################################################
+  # Generate CMake script to call find_package to work around CMake bug
+  # #15293 which isn't fixed until CMake 3.2.
+
+  set(${_ct_ROOT_HINT_VAR} ${THIRD_PARTY_FIND_DIR})
+  set(_ct_FOUND_VAR ${_package}_FOUND)
+  set(_FIND_PACKAGE_ARGS ${_package} ${ARGN})
+
+  # Create and execute TestFind<Package>.cmake script
+  configure_file(${CODE_TEMPLATE_CMAKE_DIR}/TestFindPackage.cmake
+      ${PROJECT_BINARY_DIR}/TestFind${_package}.cmake
+      @ONLY)
+  execute_process(
+      COMMAND ${CMAKE_COMMAND} -P ${PROJECT_BINARY_DIR}/TestFind${_package}.cmake
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      RESULT_VARIABLE _result_code
+      OUTPUT_FILE TestFind${_package}.log
+      ERROR_FILE TestFind${_package}-error.log)
+  ###########################################################################
+  # Workaround End
+
+  # Package not found? then attempt to retrieve it now
+  if(_result_code EQUAL 0)
+    # Use package provided to find external dependency
+    find_package(${_FIND_PACKAGE_ARGS})
+  endif()
+endmacro()
+
 # ct_get_file will download the file specified to the directory provided.
 # Usage:
 # ct_get_file(_url _dir)
