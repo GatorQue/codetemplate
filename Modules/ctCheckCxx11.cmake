@@ -8,7 +8,7 @@ macro(ct_check_for_cxx11 _var)
   if((MSVC AND (MSVC10 OR MSVC11 OR MSVC12)) OR
      (CMAKE_COMPILER_IS_GNUCXX AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.6) OR
      (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 3.1))
-     set(${_VAR} 1)
+     set(${_var} 1)
      message(STATUS "Checking for C++11 compiler - available")
   else()
      message(STATUS "Checking for C++11 compiler - unavailable")

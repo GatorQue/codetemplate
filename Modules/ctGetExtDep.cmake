@@ -178,7 +178,6 @@ function(ct_extract_file _file _dir)
   # Move "the one" directory to the final directory:
   file(REMOVE_RECURSE ${_dir_abs})
   get_filename_component(_files ${_files} ABSOLUTE)
-  file(MAKE_DIRECTORY ${_dir_abs})
   file(RENAME ${_files} ${_dir_abs})
 
   # Clean up:
