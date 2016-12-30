@@ -63,7 +63,7 @@ function(ct_add_exe _target)
       add_dependencies(${_target} ${_ct_DEPENDS})
     endif()
 
-    # Install the library built above?
+    # Install the executable built above?
     if(_ct_INSTALL)
       install(TARGETS ${_target} RUNTIME DESTINATION ${_ct_BIN_DIR})
     endif()
