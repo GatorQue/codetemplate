@@ -90,7 +90,7 @@ function(ct_get_file _url _dir)
 
   # Create expected MD5 argument
   if(_ct_MD5)
-    set(_timeout_args EXPECTED_MD5 ${_ct_MD5})
+    set(_md5_args EXPECTED_MD5 ${_ct_MD5})
   endif()
 
   # Tell CMake to download the file
